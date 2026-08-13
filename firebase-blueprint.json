@@ -1,0 +1,34 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Registered user profile and accumulated total points",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "display_name": { "type": "string" },
+        "email": { "type": "string" },
+        "avatar_url": { "type": "string" },
+        "total_points": { "type": "number" },
+        "email_verified": { "type": "boolean" },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" }
+      },
+      "required": ["username", "email", "total_points"]
+    },
+    "game_scores": {
+      "title": "Game Scores",
+      "description": "Per-game score records submitted by authenticated users",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "username": { "type": "string" },
+        "avatar_url": { "type": "string" },
+        "game_id": { "type": "string" },
+        "score": { "type": "number" },
+        "played_at": { "type": "string" }
+      },
+      "required": ["user_id", "game_id", "score", "played_at"]
+    }
+  }
+}
