@@ -173,16 +173,6 @@ export const GAMES_LIST: GameInfo[] = [
     iconName: 'Car'
   },
   {
-    id: 'color-switch',
-    name: 'COLOR SWITCH',
-    description: 'Bounce your color pixel ball up through rotating obstacles matching your current color!',
-    category: 'REACTION',
-    difficulty: 'Hard',
-    color: 'border-amber-400 bg-amber-950/40 text-amber-300',
-    bgColor: 'from-amber-900/60 to-yellow-900/60',
-    iconName: 'Palette'
-  },
-  {
     id: 'pixel-pong',
     name: 'PIXEL PONG',
     description: 'Classic arcade ping-pong! Control your paddle and rally the pixel ball past the AI.',
@@ -191,16 +181,6 @@ export const GAMES_LIST: GameInfo[] = [
     color: 'border-teal-400 bg-teal-950/40 text-teal-300',
     bgColor: 'from-teal-900/60 to-emerald-900/60',
     iconName: 'Disc'
-  },
-  {
-    id: 'simon-says',
-    name: 'SIMON SAYS',
-    description: 'Repeat the pattern! Watch the sequence of glowing arcade pads and replay it in order.',
-    category: 'PUZZLE',
-    difficulty: 'Easy',
-    color: 'border-blue-400 bg-blue-950/40 text-blue-300',
-    bgColor: 'from-blue-900/60 to-indigo-900/60',
-    iconName: 'Grid'
   },
   {
     id: 'pixel-mines',

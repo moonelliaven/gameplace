@@ -315,19 +315,6 @@ export const GameThumbnail: React.FC<GameThumbnailProps> = ({ gameId }) => {
         </svg>
       );
 
-    case 'simon-says':
-      return (
-        <svg viewBox="0 0 320 180" className="w-full h-full object-cover">
-          <rect width="320" height="180" fill="#0f172a" />
-          <rect x="30" y="25" width="120" height="60" rx="12" fill="#ef4444" stroke="#000" strokeWidth="3" />
-          <rect x="170" y="25" width="120" height="60" rx="12" fill="#22c55e" stroke="#000" strokeWidth="3" />
-          <rect x="30" y="100" width="120" height="60" rx="12" fill="#facc15" stroke="#000" strokeWidth="3" />
-          <rect x="170" y="100" width="120" height="60" rx="12" fill="#3b82f6" stroke="#fff" strokeWidth="3" />
-          <rect x="10" y="10" width="90" height="20" fill="#000" opacity="0.7" />
-          <text x="14" y="24" fill="#93c5fd" fontSize="10" fontFamily="monospace" fontWeight="bold">ROUND 5</text>
-        </svg>
-      );
-
     case 'pixel-mines':
       return (
         <svg viewBox="0 0 320 180" className="w-full h-full object-cover">

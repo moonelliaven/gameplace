@@ -129,12 +129,8 @@ export const GameFrame: React.FC<GameFrameProps> = ({ game, onExit }) => {
         return <MathDash {...props} />;
       case 'pixel-racer':
         return <PixelRacer {...props} />;
-      case 'color-switch':
-        return <ColorSwitch {...props} />;
       case 'pixel-pong':
         return <PixelPong {...props} />;
-      case 'simon-says':
-        return <SimonSays {...props} />;
       case 'pixel-mines':
         return <PixelMines {...props} />;
       case 'bubble-shooter':
