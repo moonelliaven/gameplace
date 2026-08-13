@@ -23,17 +23,6 @@ interface PlayerState {
   targetR?: number;
 }
 
-interface EnemyState {
-  c: number;
-  r: number;
-  x: number;
-  y: number;
-  moving: boolean;
-  targetC?: number;
-  targetR?: number;
-  flash: boolean;
-}
-
 const generateMaze = (): MazeData => {
   const rightWalls: boolean[][] = Array.from({ length: COLS }, () => Array(ROWS).fill(true));
   const downWalls: boolean[][] = Array.from({ length: COLS }, () => Array(ROWS).fill(true));
@@ -76,11 +65,9 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
   const [keysFound, setKeysFound] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [hitMsg, setHitMsg] = useState<{ id: number; text: string } | null>(null);
 
   const mazeRef = useRef<MazeData>(generateMaze());
   const playerRef = useRef<PlayerState>({ c: 0, r: 0, x: 0, y: 0, moving: false });
-  const enemiesRef = useRef<EnemyState[]>([]);
   const stepQueueRef = useRef<Array<{ dc: number; dr: number }>>([]);
   const keyCellsRef = useRef<Array<{ c: number; r: number }>>([]);
   const exitRef = useRef({ c: COLS - 1, r: ROWS - 1 });
@@ -89,7 +76,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
   const levelRef = useRef(1);
   const requestRef = useRef<number | null>(null);
   const lastTimeRef = useRef(0);
-  const lastEnemyMoveRef = useRef(0);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
   const isPausedRef = useRef(isPaused);
@@ -130,26 +116,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
     maze.rightWalls[COLS - 2][ROWS - 1] = false;
     maze.downWalls[COLS - 1][ROWS - 2] = false;
     exitRef.current = { c: COLS - 1, r: ROWS - 1 };
-
-    // Place enemies: 1 on levels 1-2, 2 on level 3 — far from the start so it's fair
-    const enemyCount = lvl >= 3 ? 2 : 1;
-    const enemies: EnemyState[] = [];
-    let placedEnemies = 0;
-    let guard = 0;
-    while (placedEnemies < enemyCount && guard < 200) {
-      guard++;
-      const c = 1 + Math.floor(Math.random() * (COLS - 2));
-      const r = 1 + Math.floor(Math.random() * (ROWS - 2));
-      const distFromStart = Math.abs(c) + Math.abs(r);
-      const onKey = keys.some((k) => k.c === c && k.r === r);
-      const onEnemy = enemies.some((e) => e.c === c && e.r === r);
-      const onExit = c === COLS - 1 && r === ROWS - 1;
-      if (distFromStart >= 5 && !onKey && !onEnemy && !onExit && !(c === 0 && r === 0)) {
-        enemies.push({ c, r, x: (c + 0.5) * CELL, y: (r + 0.5) * CELL, moving: false, flash: false });
-        placedEnemies++;
-      }
-    }
-    enemiesRef.current = enemies;
 
     keysFoundRef.current = 0;
     setKeysFound(0);
@@ -200,40 +166,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-
-  const handleEnemyHit = (idx: number) => {
-    const enemy = enemiesRef.current[idx];
-    if (!enemy) return;
-    sound.playBomb();
-    scoreRef.current = Math.max(0, scoreRef.current - 50);
-    setScore(scoreRef.current);
-    enemy.flash = true;
-    setTimeout(() => (enemy.flash = false), 500);
-    const msgId = Date.now();
-    setHitMsg({ id: msgId, text: '💥 HIT! -50' });
-    setTimeout(() => setHitMsg((m) => (m?.id === msgId ? null : m)), 900);
-
-    // Teleport enemy far away to a fair position
-    const maze = mazeRef.current;
-    const player = playerRef.current;
-    let guard = 0;
-    while (guard < 100) {
-      guard++;
-      const c = 1 + Math.floor(Math.random() * (COLS - 2));
-      const r = 1 + Math.floor(Math.random() * (ROWS - 2));
-      const distToPlayer = Math.abs(c - player.c) + Math.abs(r - player.r);
-      const onKey = keyCellsRef.current.some((k) => k.c === c && k.r === r);
-      const onOtherEnemy = enemiesRef.current.some((e) => e !== enemy && e.c === c && e.r === r);
-      if (distToPlayer >= 4 && !onKey && !onOtherEnemy) {
-        enemy.c = c;
-        enemy.r = r;
-        enemy.x = (c + 0.5) * CELL;
-        enemy.y = (r + 0.5) * CELL;
-        enemy.moving = false;
-        return;
-      }
-    }
-  };
 
   const levelComplete = () => {
     const bonus = 200 + timeLeft * 5;
@@ -327,12 +259,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
               sound.playCombo();
             }
 
-            // Enemy collision (step onto enemy)
-            const hitIdx = enemiesRef.current.findIndex((e) => e.c === player.c && e.r === player.r);
-            if (hitIdx >= 0) {
-              handleEnemyHit(hitIdx);
-            }
-
             // Exit reached
             const exit = exitRef.current;
             if (player.c === exit.c && player.r === exit.r && keysFoundRef.current >= LEVEL_KEYS) {
@@ -341,51 +267,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
           } else {
             player.x += (dx / dist) * speed;
             player.y += (dy / dist) * speed;
-          }
-        }
-
-        // Enemy AI: move every ~1.6s toward random valid neighbor
-        lastEnemyMoveRef.current += dt;
-        if (lastEnemyMoveRef.current > 1.6) {
-          lastEnemyMoveRef.current = 0;
-          for (const enemy of enemiesRef.current) {
-            if (enemy.moving) continue;
-            const options: Array<{ dc: number; dr: number }> = [];
-            if (enemy.c > 0 && !maze.rightWalls[enemy.c - 1][enemy.r]) options.push({ dc: -1, dr: 0 });
-            if (enemy.c < COLS - 1 && !maze.rightWalls[enemy.c][enemy.r]) options.push({ dc: 1, dr: 0 });
-            if (enemy.r > 0 && !maze.downWalls[enemy.c][enemy.r - 1]) options.push({ dc: 0, dr: -1 });
-            if (enemy.r < ROWS - 1 && !maze.downWalls[enemy.c][enemy.r]) options.push({ dc: 0, dr: 1 });
-            if (options.length > 0) {
-              const pick = options[Math.floor(Math.random() * options.length)];
-              enemy.targetC = enemy.c + pick.dc;
-              enemy.targetR = enemy.r + pick.dr;
-              enemy.moving = true;
-            }
-          }
-        }
-
-        // Animate enemy movement + collision when enemy steps onto player
-        for (const enemy of enemiesRef.current) {
-          if (enemy.moving && enemy.targetC !== undefined && enemy.targetR !== undefined) {
-            const tX = (enemy.targetC + 0.5) * CELL;
-            const tY = (enemy.targetR + 0.5) * CELL;
-            const dx = tX - enemy.x;
-            const dy = tY - enemy.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist < speed) {
-              enemy.x = tX;
-              enemy.y = tY;
-              enemy.c = enemy.targetC;
-              enemy.r = enemy.targetR;
-              enemy.moving = false;
-              if (enemy.c === player.c && enemy.r === player.r) {
-                const idx = enemiesRef.current.indexOf(enemy);
-                handleEnemyHit(idx);
-              }
-            } else {
-              enemy.x += (dx / dist) * speed;
-              enemy.y += (dy / dist) * speed;
-            }
           }
         }
       }
@@ -419,31 +300,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
         ctx.fillRect(k.c * CELL + 8, k.r * CELL + 8, CELL - 16, CELL - 16);
         ctx.font = '16px monospace';
         ctx.fillText('🔑', k.c * CELL + CELL / 2, k.r * CELL + CELL / 2);
-      }
-
-      // Enemies
-      for (const enemy of enemiesRef.current) {
-        ctx.fillStyle = enemy.flash ? '#fbbf24' : '#ef4444';
-        ctx.fillRect(enemy.x - 11, enemy.y - 11, 22, 22);
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(enemy.x - 11, enemy.y - 11, 22, 22);
-        // Eyes
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(enemy.x - 6, enemy.y - 5, 5, 5);
-        ctx.fillRect(enemy.x + 1, enemy.y - 5, 5, 5);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(enemy.x - 4, enemy.y - 3, 2, 2);
-        ctx.fillRect(enemy.x + 3, enemy.y - 3, 2, 2);
-        // Antenna
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(enemy.x - 4, enemy.y - 11);
-        ctx.lineTo(enemy.x - 4, enemy.y - 16);
-        ctx.moveTo(enemy.x + 4, enemy.y - 11);
-        ctx.lineTo(enemy.x + 4, enemy.y - 16);
-        ctx.stroke();
       }
 
       // Walls
@@ -516,11 +372,6 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
       </div>
 
       <div className="relative flex-1 bg-slate-900 overflow-hidden border-b-4 border-black">
-        {hitMsg && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 border-2 border-black font-pixel text-xs font-bold shadow-[3px_3px_0_0_#000] animate-pulse bg-red-600 text-white">
-            {hitMsg.text}
-          </div>
-        )}
         <canvas ref={canvasRef} width={COLS * CELL} height={ROWS * CELL} className="block w-full h-full" />
 
         {gameState === 'READY' && (
@@ -528,7 +379,7 @@ export const PixelMaze: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
             <h1 className="font-pixel text-3xl text-indigo-300 mb-2 filter drop-shadow-[4px_4px_0_#000]">PIXEL MAZE</h1>
             <p className="font-mono text-xs text-slate-300 max-w-xs mb-3">
               Collect all {LEVEL_KEYS} golden keys, then reach the exit portal. Each press moves you exactly
-              ONE block — tap fast to sprint! Watch out for the 👾 enemies: touching one costs 50 points.
+              ONE block — tap fast to sprint!
             </p>
             <p className="font-mono text-[10px] text-slate-400 max-w-xs mb-6">
               Controls: A/D/◀ ▶/W/S/▲ ▼ — one block per press. 3 dungeons, 60s each.

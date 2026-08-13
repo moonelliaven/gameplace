@@ -16,6 +16,7 @@ interface Scrap {
   leftPct: number;
   widthPct: number;
   color: string;
+  dropBottom: number;
 }
 
 const COLORS = ['#a78bfa', '#f472b6', '#22d3ee', '#4ade80', '#fbbf24', '#fb7185'];
@@ -27,6 +28,9 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
   const [perfectCount, setPerfectCount] = useState(0);
   const [missed, setMissed] = useState(false);
   const [scraps, setScraps] = useState<Scrap[]>([]);
+  const [playH, setPlayH] = useState(420);
+
+  const playRef = useRef<HTMLDivElement>(null);
 
   const movingBlockRef = useRef<{ x: number; width: number; dir: number; speed: number }>({
     x: 0,
@@ -34,6 +38,7 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
     dir: 1,
     speed: 1.0,
   });
+  const movingIdRef = useRef<number>(Date.now());
   const blocksRef = useRef<StackBlock[]>([]);
   const scoreRef = useRef(0);
   const gameStateRef = useRef(gameState);
@@ -46,6 +51,16 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
 
   const bestScore = getHighScoreForGame('pixel-stack');
 
+  // Track the play area height so the stack can scroll up and always stay visible
+  useEffect(() => {
+    const el = playRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setPlayH(el.clientHeight));
+    ro.observe(el);
+    setPlayH(el.clientHeight);
+    return () => ro.disconnect();
+  }, []);
+
   const stopLoop = useCallback(() => {
     if (requestRef.current) {
       cancelAnimationFrame(requestRef.current);
@@ -54,12 +69,14 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
   }, []);
 
   const spawnMovingBlock = useCallback((width: number) => {
+    // Slide in from the left edge, then travel back and forth across the whole area
     movingBlockRef.current = {
-      x: 0,
+      x: width / 2 - 0.55,
       width,
       dir: 1,
       speed: Math.min(2.6, 1.2 + scoreRef.current * 0.03),
     };
+    movingIdRef.current = Date.now();
   }, []);
 
   const startGame = () => {
@@ -75,10 +92,10 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
     setGameState('PLAYING');
   };
 
-  const dropScrap = (leftPct: number, widthPct: number, color: string) => {
+  const dropScrap = (leftPct: number, widthPct: number, color: string, dropBottom: number) => {
     if (widthPct <= 0.005) return;
     const id = Date.now() + Math.random();
-    setScraps((s) => [...s, { id, leftPct, widthPct, color }]);
+    setScraps((s) => [...s, { id, leftPct, widthPct, color, dropBottom }]);
     setTimeout(() => setScraps((s) => s.filter((x) => x.id !== id)), 750);
   };
 
@@ -94,17 +111,24 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
       if (gameStateRef.current === 'PLAYING' && !isPausedRef.current) {
         const mb = movingBlockRef.current;
         mb.x += mb.dir * mb.speed * dt;
-        if (mb.x - mb.width / 2 <= 0) {
-          mb.x = mb.width / 2;
+        const minX = mb.width / 2 - 0.55;
+        const maxX = 1.55 - mb.width / 2;
+        if (mb.x <= minX) {
+          mb.x = minX;
           mb.dir = 1;
         }
-        if (mb.x + mb.width / 2 >= 1) {
-          mb.x = 1 - mb.width / 2;
+        if (mb.x >= maxX) {
+          mb.x = maxX;
           mb.dir = -1;
         }
         setBlocks((prev) => {
           const copy = prev.slice(0, prev.length - 1);
-          copy.push({ id: Date.now() + Math.random(), x: mb.x, width: mb.width, color: '#e2e8f0' });
+          copy.push({
+            id: movingIdRef.current,
+            x: mb.x,
+            width: mb.width,
+            color: COLORS[blocksRef.current.length % COLORS.length],
+          });
           return copy;
         });
       }
@@ -144,13 +168,15 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
       setPerfectCount((p) => p + 1);
     } else {
       sound.playScore();
-      // Cut-off pieces fly off
+      // Cut-off pieces fly off (fall down from the cut line)
       const mbLeft = mb.x - mb.width / 2;
       const mbRight = mb.x + mb.width / 2;
       const topLeft = top.x - top.width / 2;
       const topRight = top.x + top.width / 2;
-      if (mbLeft < topLeft) dropScrap(mbLeft, topLeft - mbLeft, '#e2e8f0');
-      if (mbRight > topRight) dropScrap(topRight, mbRight - topRight, '#e2e8f0');
+      const scrapColor = COLORS[blocksRef.current.length % COLORS.length];
+      const dropBottom = blocksRef.current.length * 40;
+      if (mbLeft < topLeft) dropScrap(mbLeft, topLeft - mbLeft, scrapColor, dropBottom);
+      if (mbRight > topRight) dropScrap(topRight, mbRight - topRight, scrapColor, dropBottom);
     }
 
     const newBlock: StackBlock = {
@@ -195,7 +221,7 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  const visibleBlocks = blocks.length > 12 ? blocks.slice(blocks.length - 12) : blocks;
+  const stackOffset = Math.max(0, blocks.length * 40 - (playH - 24));
 
   return (
     <div className="flex flex-col h-full w-full select-none font-mono bg-slate-950">
@@ -215,6 +241,7 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
 
       {/* Play area */}
       <div
+        ref={playRef}
         onClick={handleDrop}
         className="relative flex-1 bg-gradient-to-b from-[#1e1b4b] to-[#0b0b1a] overflow-hidden border-b-4 border-black cursor-pointer touch-none flex flex-col items-center justify-end"
       >
@@ -237,18 +264,18 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
           TAP TO DROP!
         </div>
 
-        {/* Stack */}
+        {/* Stack — builds UPWARD from the bottom, camera follows the top */}
         <div
           className="relative w-[85%] max-w-sm mb-4"
-          style={{ height: visibleBlocks.length * 40 }}
+          style={{ height: blocks.length * 40, transform: `translateY(${stackOffset}px)` }}
         >
-          {visibleBlocks.map((b, idx) => (
+          {blocks.map((b, idx) => (
             <div
               key={b.id}
               style={{
                 left: `${(b.x - b.width / 2) * 100}%`,
                 width: `${b.width * 100}%`,
-                top: idx * 40,
+                bottom: idx * 40,
                 backgroundColor: b.color,
               }}
               className="absolute h-10 border-2 border-black/70 shadow-[2px_2px_0_#000]"
@@ -259,7 +286,7 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
           <style>{`
             @keyframes scrapFall {
               0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-              100% { transform: translateY(150px) rotate(20deg); opacity: 0; }
+              100% { transform: translateY(-170px) rotate(-20deg); opacity: 0; }
             }
           `}</style>
           {scraps.map((s) => (
@@ -268,7 +295,7 @@ export const PixelStack: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
               style={{
                 left: `${s.leftPct * 100}%`,
                 width: `${s.widthPct * 100}%`,
-                top: (visibleBlocks.length - 1) * 40,
+                bottom: s.dropBottom,
                 backgroundColor: s.color,
                 animation: 'scrapFall 0.7s ease-in forwards',
               }}

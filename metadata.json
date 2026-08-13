@@ -1,6 +1,6 @@
 {
   "name": "GAMEPLACE",
-  "description": "Pixel Mini Game Hub with 26 retro arcade mini games including Pixel Aim, Clean Room, Catch It!, Light Up, Pixel Pop, Fast Food, Pixel Break, Pixel Snake, Pixel Stack, Math Dash, Pixel Racer, and many more.",
+  "description": "Pixel Mini Game Hub with 24 retro arcade mini games including Pixel Aim, Clean Room, Catch It!, Light Up, Pixel Pop, Fast Food, Pixel Break, Pixel Snake, Pixel Stack, Math Dash, Pixel Racer, and many more.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

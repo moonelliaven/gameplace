@@ -28,6 +28,7 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
   const [playerX, setPlayerX] = useState(140);
   const [aliens, setAliens] = useState<Alien[]>([]);
   const [bullets, setBullets] = useState<Bullet[]>([]);
+  const [waveBanner, setWaveBanner] = useState<string | null>(null);
 
   const bestScore = getHighScoreForGame('space-defender');
   const playerXRef = useRef(140);
@@ -41,6 +42,7 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
   const lastTimeRef = useRef(0);
   const lastEnemyShotRef = useRef(0);
   const lastShootRef = useRef(0);
+  const nextWaveAtRef = useRef(0);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
   const isPausedRef = useRef(isPaused);
@@ -54,16 +56,21 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
   }, []);
 
   const initWave = useCallback((w: number) => {
+    // Random, scattered positions (never touching each other) instead of a grid
     const list: Alien[] = [];
-    const rows = w === 1 ? 3 : 4;
-    const cols = w === 1 ? 6 : 7;
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
+    const count = w === 1 ? 10 : 14;
+    let guard = 0;
+    while (list.length < count && guard < 600) {
+      guard++;
+      const x = 14 + Math.random() * (LANE_W - 72);
+      const y = 28 + Math.random() * 90;
+      const tooClose = list.some((a) => Math.abs(a.x - x) < 46 && Math.abs(a.y - y) < 38);
+      if (!tooClose) {
         list.push({
-          id: `alien-${Date.now()}-${row}-${col}`,
-          x: 30 + col * 45 + (LANE_W - 30 - (cols - 1) * 45) / 2,
-          y: 40 + row * 36,
-          type: row % 3,
+          id: `alien-${Date.now()}-${guard}`,
+          x,
+          y,
+          type: Math.floor(Math.random() * 3),
         });
       }
     }
@@ -79,6 +86,8 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
     playerXRef.current = 140;
     directionRef.current = 1;
     bulletsRef.current = [];
+    nextWaveAtRef.current = 0;
+    setWaveBanner(null);
     setScore(0);
     setLives(3);
     setWave(1);
@@ -201,13 +210,20 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
             }
           }
         } else {
-          // Wave cleared
-          sound.playLevelUp();
-          scoreRef.current += 200;
-          setScore(scoreRef.current);
-          waveRef.current += 1;
-          setWave(waveRef.current);
-          initWave(waveRef.current);
+          // Wave cleared — show a banner, then bring the next wave in after a short pause
+          if (nextWaveAtRef.current === 0) {
+            nextWaveAtRef.current = now + 2000;
+            scoreRef.current += 200;
+            setScore(scoreRef.current);
+            sound.playLevelUp();
+            setWaveBanner(`WAVE ${waveRef.current} CLEARED! +200`);
+          } else if (now >= nextWaveAtRef.current) {
+            nextWaveAtRef.current = 0;
+            setWaveBanner(null);
+            waveRef.current += 1;
+            setWave(waveRef.current);
+            initWave(waveRef.current);
+          }
         }
       }
 
@@ -271,11 +287,18 @@ export const SpaceDefender: React.FC<GameContainerProps> = ({ onGameOver, isPaus
           <div
             key={alien.id}
             style={{ left: `${alien.x}px`, top: `${alien.y}px` }}
-            className="absolute text-xl"
+            className="absolute w-9 h-9 flex items-center justify-center text-xl"
           >
             {alien.type === 0 ? '👾' : alien.type === 1 ? '👽' : '🛸'}
           </div>
         ))}
+
+        {/* Wave banner */}
+        {waveBanner && (
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 px-5 py-3 border-4 border-black font-pixel text-sm font-bold shadow-[4px_4px_0_0_#000] animate-pulse bg-emerald-500 text-white whitespace-nowrap">
+            {waveBanner}
+          </div>
+        )}
 
         {/* Bullets */}
         {bullets.map((bullet) => (

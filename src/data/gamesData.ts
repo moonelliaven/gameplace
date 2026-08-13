@@ -193,16 +193,6 @@ export const GAMES_LIST: GameInfo[] = [
     iconName: 'Bomb'
   },
   {
-    id: 'bubble-shooter',
-    name: 'BUBBLE SHOOTER',
-    description: 'Aim & launch colored bubbles! Match 3 or more of the same color to pop the grid.',
-    category: 'CASUAL',
-    difficulty: 'Medium',
-    color: 'border-pink-400 bg-pink-950/40 text-pink-300',
-    bgColor: 'from-pink-900/60 to-rose-900/60',
-    iconName: 'CircleDot'
-  },
-  {
     id: 'pixel-bowling',
     name: 'PIXEL BOWLING',
     description: 'Arcade bowling! Adjust your lane position, aim angle, and power gauge for a STRIKE!',
@@ -231,16 +221,6 @@ export const GAMES_LIST: GameInfo[] = [
     color: 'border-purple-400 bg-purple-950/40 text-purple-300',
     bgColor: 'from-purple-900/60 to-pink-900/60',
     iconName: 'ShieldAlert'
-  },
-  {
-    id: 'pixel-slicer',
-    name: 'PIXEL SLICER',
-    description: 'Slice flying pixel fruits! Swipe or drag across the screen and avoid slicing explosive bombs.',
-    category: 'REACTION',
-    difficulty: 'Medium',
-    color: 'border-orange-400 bg-orange-950/40 text-orange-300',
-    bgColor: 'from-orange-900/60 to-amber-900/60',
-    iconName: 'Scissors'
   },
   {
     id: 'pixel-golf',

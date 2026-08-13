@@ -105,19 +105,11 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  // Pointer aiming: drag from ball
+  // Pointer aiming: press / drag anywhere on the canvas to aim the ball
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas || ballMovingRef.current) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-    const ball = ballRef.current;
-    if (Math.hypot(x - ball.x, y - ball.y) < 30) {
-      setAiming(true);
-    }
+    setAiming(true);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -222,8 +214,8 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
             setHole(nextHole);
             strokesRef.current = 0;
             setStrokes(0);
+            // Loop keeps running — the ball just waits at the hole until the next one is set up
             setTimeout(() => setupHole(nextHole, w, h), 1300);
-            return;
           }
 
           // Ball stopped

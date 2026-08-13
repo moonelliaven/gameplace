@@ -39,7 +39,7 @@ export const AboutView: React.FC = () => {
             <div className="bg-[#151525] border-2 border-white/20 p-4 shadow-[4px_4px_0_0_#000]">
               <div className="flex items-center gap-2 font-pixel text-xs text-cyan-400 mb-2">
                 <Gamepad2 className="w-4 h-4 text-cyan-400" />
-                <span>26 INSTANT MINI GAMES</span>
+                <span>24 INSTANT MINI GAMES</span>
               </div>
               <p className="text-xs text-white/70">
                 Pixel Aim, Clean Room, Catch It!, Light Up, Pixel Pop, Fast Food, Pixel Break, Pixel Snake, Pixel Stack, Math Dash, Pixel Racer, and 14 more!

@@ -322,27 +322,6 @@ export const GameThumbnail: React.FC<GameThumbnailProps> = ({ gameId }) => {
         </svg>
       );
 
-    case 'bubble-shooter':
-      return (
-        <svg viewBox="0 0 320 180" className="w-full h-full object-cover">
-          <rect width="320" height="180" fill="#4a044e" />
-          {[
-            [40, 20, '#ef4444'],
-            [100, 30, '#facc15'],
-            [160, 20, '#22c55e'],
-            [220, 30, '#3b82f6'],
-            [280, 20, '#a855f7'],
-            [70, 55, '#ec4899'],
-            [190, 55, '#ef4444'],
-          ].map(([x, y, c], i) => (
-            <circle key={i} cx={Number(x)} cy={Number(y)} r="14" fill={String(c)} stroke="#000" strokeWidth="2" />
-          ))}
-          <circle cx="160" cy="150" r="14" fill="#facc15" stroke="#fff" strokeWidth="2" />
-          <rect x="10" y="10" width="90" height="20" fill="#000" opacity="0.8" />
-          <text x="14" y="24" fill="#f9a8d4" fontSize="10" fontFamily="monospace" fontWeight="bold">POP: 12</text>
-        </svg>
-      );
-
     case 'pixel-bowling':
       return (
         <svg viewBox="0 0 320 180" className="w-full h-full object-cover">
@@ -390,20 +369,6 @@ export const GameThumbnail: React.FC<GameThumbnailProps> = ({ gameId }) => {
           <polygon points="160,60 175,95 160,88 145,95" fill="#22d3ee" stroke="#fff" strokeWidth="2" />
           <rect x="10" y="10" width="100" height="20" fill="#000" opacity="0.8" />
           <text x="14" y="24" fill="#c4b5fd" fontSize="10" fontFamily="monospace" fontWeight="bold">SURV: 18s</text>
-        </svg>
-      );
-
-    case 'pixel-slicer':
-      return (
-        <svg viewBox="0 0 320 180" className="w-full h-full object-cover">
-          <rect width="320" height="180" fill="#3b0764" />
-          <text x="70" y="80" fontSize="34">🍎</text>
-          <text x="150" y="45" fontSize="34">🍌</text>
-          <text x="220" y="95" fontSize="34">💣</text>
-          <text x="240" y="50" fontSize="22">⭐</text>
-          <path d="M40 140 Q 120 60 260 100" stroke="#f8fafc" strokeWidth="4" fill="none" strokeLinecap="round" />
-          <rect x="10" y="10" width="100" height="20" fill="#000" opacity="0.8" />
-          <text x="14" y="24" fill="#fdba74" fontSize="10" fontFamily="monospace" fontWeight="bold">SLICED: 14</text>
         </svg>
       );
 

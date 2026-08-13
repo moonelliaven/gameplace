@@ -25,6 +25,7 @@ export const PixelBowling: React.FC<GameContainerProps> = ({ onGameOver, isPause
 
   const pinsRef = useRef<Pin[]>([]);
   const ballRef = useRef({ x: 0, y: 0, vx: 0, vy: 0, launched: false });
+  const throwEndedRef = useRef(false);
   const sessionRef = useRef(1);
   const throwNumRef = useRef(1);
   const scoreRef = useRef(0);
@@ -82,6 +83,7 @@ export const PixelBowling: React.FC<GameContainerProps> = ({ onGameOver, isPause
     const canvas = canvasRef.current;
     if (!canvas) return;
     ballRef.current = { x: canvas.width / 2, y: canvas.height - 40, vx: 0, vy: 0, launched: false };
+    throwEndedRef.current = false;
     setBallOut(false);
   }, []);
 
@@ -186,7 +188,8 @@ export const PixelBowling: React.FC<GameContainerProps> = ({ onGameOver, isPause
 
       if (gameStateRef.current === 'PLAYING' && !isPausedRef.current) {
         const ball = ballRef.current;
-        if (ball.launched) {
+        // Keep running the loop every frame; the throw only ends once
+        if (ball.launched && !throwEndedRef.current) {
           ball.x += ball.vx * dt;
           ball.y += ball.vy * dt;
           // Stronger friction so the ball visibly comes to rest
@@ -223,8 +226,8 @@ export const PixelBowling: React.FC<GameContainerProps> = ({ onGameOver, isPause
           // Throw ended: ball exits top or comes to rest at the bottom
           const speed = Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy);
           if (ball.y < 10 || (ball.y > h - 30 && speed < 30)) {
+            throwEndedRef.current = true;
             endThrow();
-            return;
           }
         }
       }

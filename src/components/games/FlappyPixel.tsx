@@ -57,11 +57,11 @@ export const FlappyPixel: React.FC<GameContainerProps> = ({ onGameOver, isPaused
     onGameOver(scoreRef.current);
   }, [onGameOver]);
 
-  // Flap: gentle bounce, and soft parachute glide when not flapping
+  // Flap: soft jump that floats — small impulse, and the parachute glide slows the fall
   const handleFlap = () => {
     if (gameStateRef.current !== 'PLAYING' || isPausedRef.current) return;
     sound.playPop();
-    velocityRef.current = Math.max(-135, velocityRef.current - 135);
+    velocityRef.current = Math.max(-110, velocityRef.current - 110);
   };
 
   // Main loop
@@ -95,7 +95,7 @@ export const FlappyPixel: React.FC<GameContainerProps> = ({ onGameOver, isPaused
           const pipe = pipesRef.current[i];
           pipe.x -= 85 * dt;
 
-          if (!pipe.passed && pipe.x + 52 < 88) {
+          if (!pipe.passed && pipe.x + 52 < 80) {
             pipe.passed = true;
             scoreRef.current += 1;
             setScore(scoreRef.current);
@@ -116,10 +116,10 @@ export const FlappyPixel: React.FC<GameContainerProps> = ({ onGameOver, isPaused
           });
         }
 
-        // Collision with pipes
+        // Collision with pipes — solid: the bird box (left 80, width 32) can never cross a pipe
         for (const pipe of pipesRef.current) {
-          if (pipe.x < 88 + 20 && pipe.x + 52 > 88 - 14) {
-            if (birdYRef.current < pipe.topHeight || birdYRef.current + 24 > pipe.topHeight + GAP_HEIGHT) {
+          if (pipe.x < 112 && pipe.x + 52 > 80) {
+            if (birdYRef.current < pipe.topHeight || birdYRef.current + 32 > pipe.topHeight + GAP_HEIGHT) {
               finish();
               return;
             }
@@ -179,7 +179,7 @@ export const FlappyPixel: React.FC<GameContainerProps> = ({ onGameOver, isPaused
         {/* Pixel Bird */}
         <div
           style={{ top: `${birdY}px`, left: '80px', transform: `rotate(${Math.max(-25, Math.min(30, velocityRef.current * 0.15))}deg)` }}
-          className="absolute w-9 h-9 z-30 transition-[top] duration-75"
+          className="absolute w-9 h-9 z-30"
         >
           <div className="w-8 h-8 bg-yellow-400 border-2 border-black rounded-sm shadow-[2px_2px_0_0_#000] flex items-center justify-center text-lg">
             🐤

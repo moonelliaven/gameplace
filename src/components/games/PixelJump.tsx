@@ -13,9 +13,9 @@ interface Platform {
 }
 
 const PLAY_W = 300;
-const GRAVITY = 1440; // px/s^2
-const BOUNCE_VELOCITY = 560; // auto bounce when landing
-const HOP_VELOCITY = 390; // space jump from a platform
+const GRAVITY = 1500; // px/s^2
+const BOUNCE_VELOCITY = 405; // auto bounce when landing (~55px apex = matches 52px platform spacing)
+const HOP_VELOCITY = 405; // space jump from a platform
 const MOVE_SPEED = 270; // px/s
 const MAX_FALL = 1100;
 
@@ -138,12 +138,12 @@ export const PixelJump: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
         playerYRef.current += velocityRef.current * dt;
         groundedRef.current = false;
 
-        // Landing check while falling
+        // Landing check while falling (generous window so fast falls never miss a platform)
         if (velocityRef.current < 0) {
           for (const p of platformsRef.current) {
             const top = p.y + 16;
-            if (prevY >= top && playerYRef.current <= top + 8 && playerYRef.current > top - 30) {
-              if (playerXRef.current + 14 >= p.x && playerXRef.current - 14 <= p.x + p.width) {
+            if (prevY >= top - 2 && playerYRef.current <= top + 18 && playerYRef.current > top - 30) {
+              if (playerXRef.current + 12 >= p.x && playerXRef.current - 12 <= p.x + p.width) {
                 playerYRef.current = top;
                 velocityRef.current = BOUNCE_VELOCITY;
                 groundedRef.current = true;
@@ -240,7 +240,7 @@ export const PixelJump: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
             bottom: `${playerY}px`,
             transform: `translateX(-50%) rotate(${velocityRef.current > 100 ? 15 : velocityRef.current < -50 ? -20 : 0}deg)`,
           }}
-          className="absolute text-3xl z-30 transition-all duration-75"
+          className="absolute text-3xl z-30"
         >
           🐸
         </div>

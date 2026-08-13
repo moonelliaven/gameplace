@@ -18,11 +18,9 @@ import { MathDash } from './games/MathDash';
 import { PixelRacer } from './games/PixelRacer';
 import { PixelPong } from './games/PixelPong';
 import { PixelMines } from './games/PixelMines';
-import { BubbleShooter } from './games/BubbleShooter';
 import { PixelBowling } from './games/PixelBowling';
 import { WordScramble } from './games/WordScramble';
 import { PixelDodge } from './games/PixelDodge';
-import { PixelSlicer } from './games/PixelSlicer';
 import { PixelGolf } from './games/PixelGolf';
 import { PixelMaze } from './games/PixelMaze';
 import { FlappyPixel } from './games/FlappyPixel';
@@ -147,16 +145,12 @@ export const GameFrame: React.FC<GameFrameProps> = ({ game, onExit }) => {
         return <PixelPong {...props} />;
       case 'pixel-mines':
         return <PixelMines {...props} />;
-      case 'bubble-shooter':
-        return <BubbleShooter {...props} />;
       case 'pixel-bowling':
         return <PixelBowling {...props} />;
       case 'word-scramble':
         return <WordScramble {...props} />;
       case 'pixel-dodge':
         return <PixelDodge {...props} />;
-      case 'pixel-slicer':
-        return <PixelSlicer {...props} />;
       case 'pixel-golf':
         return <PixelGolf {...props} />;
       case 'pixel-maze':
