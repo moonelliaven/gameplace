@@ -17,6 +17,7 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
   const [totalStrokes, setTotalStrokes] = useState(0);
   const [score, setScore] = useState(0);
   const [aiming, setAiming] = useState(false);
+  const [holeMsg, setHoleMsg] = useState<{ id: number; text: string } | null>(null);
 
   const ballRef = useRef({ x: 0, y: 0, vx: 0, vy: 0 });
   const holeRef = useRef<HoleDef>({ x: 0, y: 0 });
@@ -212,11 +213,16 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
               return;
             }
 
-            holeRefNum.current += 1;
-            setHole(holeRefNum.current);
+            const nextHole = holeRefNum.current + 1;
+            const msgId = Date.now();
+            setHoleMsg({ id: msgId, text: `🏌 HOLE IN! (${strokesRef.current} STROKE${strokesRef.current > 1 ? 'S' : ''})` });
+            setTimeout(() => setHoleMsg((m) => (m?.id === msgId ? null : m)), 1400);
+
+            holeRefNum.current = nextHole;
+            setHole(nextHole);
             strokesRef.current = 0;
             setStrokes(0);
-            setTimeout(() => setupHole(holeRefNum.current, w, h), 800);
+            setTimeout(() => setupHole(nextHole, w, h), 1300);
             return;
           }
 
@@ -282,18 +288,28 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Aim line while aiming
-      if (aiming && !ballMovingRef.current) {
+      // Aim arrow: solid line + arrowhead, shown whenever the ball is ready
+      if (!ballMovingRef.current) {
         const a = aimRef.current;
-        const len = 40 + a.power * 0.6;
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([6, 6]);
+        const len = 45 + a.power * 0.7;
+        const tipX = ball.x + Math.cos(a.angle) * len;
+        const tipY = ball.y + Math.sin(a.angle) * len;
+        ctx.strokeStyle = aiming ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(ball.x, ball.y);
-        ctx.lineTo(ball.x + Math.cos(a.angle) * len, ball.y + Math.sin(a.angle) * len);
+        ctx.lineTo(tipX, tipY);
         ctx.stroke();
-        ctx.setLineDash([]);
+        // Arrowhead
+        const arrowSize = 9;
+        const backAngle = a.angle + Math.PI;
+        ctx.fillStyle = aiming ? '#fef08a' : 'rgba(254,240,138,0.5)';
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(tipX + Math.cos(backAngle - 0.45) * arrowSize, tipY + Math.sin(backAngle - 0.45) * arrowSize);
+        ctx.lineTo(tipX + Math.cos(backAngle + 0.45) * arrowSize, tipY + Math.sin(backAngle + 0.45) * arrowSize);
+        ctx.closePath();
+        ctx.fill();
       }
 
       requestRef.current = requestAnimationFrame(loop);
@@ -325,6 +341,11 @@ export const PixelGolf: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
       </div>
 
       <div className="relative flex-1 bg-slate-900 overflow-hidden border-b-4 border-black">
+        {holeMsg && (
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 px-5 py-2 border-2 border-black font-pixel text-sm font-bold shadow-[3px_3px_0_0_#000] animate-bounce bg-emerald-500 text-black whitespace-nowrap">
+            {holeMsg.text}
+          </div>
+        )}
         <canvas
           ref={canvasRef}
           width={480}

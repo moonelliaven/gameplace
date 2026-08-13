@@ -5,9 +5,9 @@ import { CircleDot, Trophy, Play, RotateCcw, ArrowLeft, ArrowRight } from 'lucid
 import { getHighScoreForGame } from '../../utils/scores';
 
 const COLS = 8;
-const ROWS = 9;
+const ROWS = 14;
 const BUBBLE_COLORS = ['#ef4444', '#facc15', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
-const TOP_FILL = 4;
+const TOP_FILL = 5;
 
 type Grid = (string | null)[][]; // [row][col]
 
@@ -161,7 +161,7 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
       setShooting(true);
 
       // Animate travel
-      const steps = 24;
+      const steps = 40;
       let step = 0;
       const interval = setInterval(() => {
         if (isPausedRef.current) return;
@@ -208,7 +208,7 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
           setCurrentBubble(BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)]);
           setShooting(false);
         }
-      }, 40);
+      }, 35);
     },
     [currentBubble, onGameOver, shooting]
   );
@@ -252,13 +252,13 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
         </div>
       </div>
 
-      <div className="relative flex-1 bg-gradient-to-b from-[#4a044e] to-[#0b0b1a] flex flex-col items-center justify-center p-4 border-b-4 border-black">
-        <div className="relative w-full max-w-md">
-          {/* Bubble grid */}
-          <div className="grid grid-cols-8 gap-1">
+      <div className="relative flex-1 bg-gradient-to-b from-[#4a044e] to-[#0b0b1a] flex flex-col items-center pt-3 pb-3 px-3 border-b-4 border-black overflow-hidden">
+        <div className="w-full max-w-sm flex-1 min-h-0 flex flex-col">
+          {/* Bubble grid — fills available height */}
+          <div className="relative grid grid-cols-8 gap-1 flex-1 min-h-0" style={{ gridTemplateRows: 'repeat(14, minmax(0, 1fr))' }}>
             {grid.map((row, r) =>
               row.map((color, c) => (
-                <div key={`${r}-${c}`} className="aspect-square flex items-center justify-center">
+                <div key={`${r}-${c}`} className="flex items-center justify-center min-h-0">
                   {color && (
                     <div
                       className="w-[85%] h-[85%] rounded-full border-2 border-black/50"
@@ -268,27 +268,39 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
                 </div>
               ))
             )}
+
+            {/* Traveling bubble */}
+            {travelY !== null && (
+              <div
+                className="absolute left-1/2"
+                style={{
+                  bottom: `${travelY * 100}%`,
+                  transform: `translateX(calc(-50% + ${(shooterCol - 3.5) * 12.5}%))`,
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-full border-2 border-black/60"
+                  style={{ backgroundColor: currentBubble }}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Traveling bubble */}
-          {travelY !== null && (
-            <div
-              className="absolute left-1/2 -translate-x-1/2"
-              style={{
-                bottom: `${travelY * 100}%`,
-                transform: `translateX(calc(-50% + ${(shooterCol - 3.5) * 12.5}%))`,
-              }}
-            >
-              <div
-                className="w-8 h-8 rounded-full border-2 border-black/60"
-                style={{ backgroundColor: currentBubble }}
-              />
-            </div>
-          )}
-
-          {/* Shooter */}
+          {/* Shooter (drag left/right) */}
           <div
-            className="relative mt-3 bg-slate-800 border-2 border-black rounded p-2"
+            className="relative mt-2 bg-slate-800 border-2 border-black rounded p-2 touch-none cursor-grab active:cursor-grabbing"
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              const rect = e.currentTarget.getBoundingClientRect();
+              const frac = (e.clientX - rect.left) / rect.width;
+              setShooterCol(Math.max(0, Math.min(COLS - 1, Math.round(frac * (COLS - 1)))));
+            }}
+            onPointerMove={(e) => {
+              if (e.buttons !== 1) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const frac = (e.clientX - rect.left) / rect.width;
+              setShooterCol(Math.max(0, Math.min(COLS - 1, Math.round(frac * (COLS - 1)))));
+            }}
           >
             <div
               className="mx-auto w-8 h-8 rounded-full border-2 border-white/40 transition-transform duration-100 cursor-pointer"
@@ -297,12 +309,10 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
                 transform: `translateX(${(shooterCol - 3.5) * 12.5}%)`,
               }}
               onClick={() => fireBubble(shooterCol)}
-              onPointerDown={(e) => {
-                const rect = e.currentTarget.parentElement!.getBoundingClientRect();
-                const frac = (e.clientX - rect.left) / rect.width;
-                setShooterCol(Math.max(0, Math.min(COLS - 1, Math.round(frac * (COLS - 1)))));
-              }}
             />
+            <div className="absolute -top-2 left-0 right-0 text-center text-[9px] font-pixel text-white/40 pointer-events-none">
+              DRAG ◀ ▶ OR USE BUTTONS TO AIM
+            </div>
           </div>
         </div>
 
@@ -358,24 +368,24 @@ export const BubbleShooter: React.FC<GameContainerProps> = ({ onGameOver, isPaus
       <div className="flex justify-between items-center p-3 bg-[#151525] gap-2">
         <button
           onClick={() => setShooterCol((c) => Math.max(0, c - 1))}
-          disabled={gameState !== 'PLAYING'}
-          className="flex-1 bg-pink-500 hover:bg-pink-400 text-black font-mono font-bold py-2.5 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-xs disabled:opacity-50"
+          disabled={gameState !== 'PLAYING' || shooting}
+          className="flex-1 bg-pink-500 hover:bg-pink-400 text-black font-mono font-bold py-3 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-xs disabled:opacity-50"
         >
-          <ArrowLeft className="w-4 h-4" />LEFT
+          <ArrowLeft className="w-4 h-4" /> LEFT <span className="opacity-60">(A)</span>
         </button>
         <button
           onClick={() => fireBubble(shooterCol)}
           disabled={gameState !== 'PLAYING' || shooting}
-          className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-mono font-bold py-2.5 border-2 border-black shadow-[3px_3px_0_0_#000] cursor-pointer active:scale-95 text-xs disabled:opacity-50"
+          className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-mono font-bold py-3 border-2 border-black shadow-[3px_3px_0_0_#000] cursor-pointer active:scale-95 text-xs disabled:opacity-50"
         >
-          SHOOT (SPACE)
+          SHOOT <span className="opacity-60">(SPACE)</span>
         </button>
         <button
           onClick={() => setShooterCol((c) => Math.min(COLS - 1, c + 1))}
-          disabled={gameState !== 'PLAYING'}
-          className="flex-1 bg-pink-500 hover:bg-pink-400 text-black font-mono font-bold py-2.5 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-xs disabled:opacity-50"
+          disabled={gameState !== 'PLAYING' || shooting}
+          className="flex-1 bg-pink-500 hover:bg-pink-400 text-black font-mono font-bold py-3 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center gap-1 cursor-pointer active:scale-95 text-xs disabled:opacity-50"
         >
-          RIGHT <ArrowRight className="w-4 h-4" />
+          RIGHT <span className="opacity-60">(D)</span> <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>

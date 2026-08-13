@@ -285,21 +285,6 @@ export const GameThumbnail: React.FC<GameThumbnailProps> = ({ gameId }) => {
         </svg>
       );
 
-    case 'color-switch':
-      return (
-        <svg viewBox="0 0 320 180" className="w-full h-full object-cover">
-          <rect width="320" height="180" fill="#020617" />
-          <circle cx="160" cy="60" r="14" fill="#3b82f6" stroke="#fff" strokeWidth="2" />
-          <path d="M160 30 A46 46 0 0 1 206 60 L160 60 Z" fill="#3b82f6" stroke="#000" strokeWidth="2" />
-          <path d="M160 60 A46 46 0 0 1 160 106 L160 60 Z" fill="#22c55e" stroke="#000" strokeWidth="2" />
-          <path d="M160 60 A46 46 0 0 1 114 60 L160 60 Z" fill="#ef4444" stroke="#000" strokeWidth="2" />
-          <path d="M160 60 A46 46 0 0 1 160 14 L160 60 Z" fill="#facc15" stroke="#000" strokeWidth="2" />
-          <circle cx="160" cy="115" r="14" fill="#3b82f6" stroke="#fff" strokeWidth="2" />
-          <rect x="10" y="10" width="90" height="24" fill="#000" opacity="0.8" />
-          <text x="16" y="26" fill="#fbbf24" fontSize="11" fontFamily="monospace" fontWeight="bold">SCORE: 80</text>
-        </svg>
-      );
-
     case 'pixel-pong':
       return (
         <svg viewBox="0 0 320 180" className="w-full h-full object-cover">

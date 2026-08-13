@@ -79,6 +79,7 @@ export const PixelMines: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
   const [safeCells, setSafeCells] = useState(GRID * GRID - MINE_COUNT);
   const [revealedCount, setRevealedCount] = useState(0);
   const [explodedCell, setExplodedCell] = useState<{ x: number; y: number } | null>(null);
+  const [flagMode, setFlagMode] = useState(false);
 
   const bestScore = getHighScoreForGame('pixel-mines');
 
@@ -91,6 +92,7 @@ export const PixelMines: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
     setSafeCells(GRID * GRID - MINE_COUNT);
     setRevealedCount(0);
     setExplodedCell(null);
+    setFlagMode(false);
     setGameState('PLAYING');
   };
 
@@ -109,6 +111,10 @@ export const PixelMines: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
 
   const revealCell = (x: number, y: number) => {
     if (gameState !== 'PLAYING' || isPaused) return;
+    if (flagMode) {
+      toggleFlag(x, y);
+      return;
+    }
     const cell = board[y][x];
     if (cell.revealed || cell.flagged) return;
 
@@ -205,16 +211,44 @@ export const PixelMines: React.FC<GameContainerProps> = ({ onGameOver, isPaused 
           </div>
         )}
 
-        <p className="text-[10px] text-white/40 font-pixel mt-3">
-          LEFT CLICK: REVEAL · RIGHT CLICK: FLAG 🚩
-        </p>
+                <div className="flex items-center gap-3 mt-3">
+          <p className="text-[10px] text-white/40 font-pixel">
+            TAP CELL: REVEAL · RIGHT CLICK / FLAG MODE: FLAG 🚩
+          </p>
+          <button
+            onClick={() => setFlagMode((f) => !f)}
+            className={`font-pixel text-[10px] px-3 py-1.5 border-2 border-black shadow-[2px_2px_0_0_#000] cursor-pointer active:translate-y-0.5 flex items-center gap-1 ${
+              flagMode ? 'bg-rose-500 text-white' : 'bg-slate-700 text-white/80'
+            }`}
+          >
+            <Flag className="w-3 h-3" />FLAG MODE: {flagMode ? 'ON' : 'OFF'}
+          </button>
+        </div>
 
         {gameState === 'READY' && (
-          <div className="absolute inset-0 bg-slate-950/85 flex flex-col items-center justify-center p-6 text-center z-30">
+          <div className="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center z-30 overflow-y-auto">
             <h1 className="font-pixel text-3xl text-zinc-300 mb-2 filter drop-shadow-[4px_4px_0_#000]">PIXEL MINES</h1>
-            <p className="font-mono text-xs text-slate-300 max-w-xs mb-6">
-              Uncover safe cells without hitting the {MINE_COUNT} hidden mines. Right-click to flag!
-            </p>
+            <div className="max-w-sm text-left bg-slate-900/80 border-2 border-white/20 p-4 mb-6 rounded space-y-2">
+              <p className="font-mono text-[11px] text-slate-200 leading-relaxed">
+                <span className="text-yellow-400 font-bold">GOAL:</span> Reveal every safe cell without
+                hitting one of the {MINE_COUNT} hidden mines 💣.
+              </p>
+              <p className="font-mono text-[11px] text-slate-300 leading-relaxed">
+                <span className="text-cyan-400 font-bold">NUMBERS:</span> A revealed number tells you how
+                many mines touch that cell. A blank cell auto-reveals its safe neighbors.
+              </p>
+              <p className="font-mono text-[11px] text-slate-300 leading-relaxed">
+                <span className="text-rose-400 font-bold">FLAGS 🚩:</span> Suspect a mine? Right-click a
+                cell (or use FLAG MODE on touch) to flag it and protect it from accidental taps.
+              </p>
+              <p className="font-mono text-[11px] text-slate-300 leading-relaxed">
+                <span className="text-emerald-400 font-bold">SCORE:</span> +10 per revealed cell, +100
+                bonus (or +200 with no flags) for clearing the whole field.
+              </p>
+              <p className="font-mono text-[11px] text-slate-400 leading-relaxed">
+                ⚠️ Hit a mine and the game ends instantly!
+              </p>
+            </div>
             <button
               onClick={startGame}
               className="bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-pixel text-sm px-8 py-3.5 border-4 border-black shadow-[4px_4px_0_#000] active:translate-y-1 cursor-pointer"

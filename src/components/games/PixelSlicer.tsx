@@ -19,6 +19,17 @@ interface FlyingFruit {
   rotSpeed: number;
 }
 
+interface SliceHalf {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  rotation: number;
+  rotSpeed: number;
+  icon: string;
+  life: number;
+}
+
 const FRUIT_ICONS = ['🍎', '🍌', '🍉', '🍇', '🍓', '🍑', '🥝'];
 
 const spawnFruit = (w: number): FlyingFruit => {
@@ -42,8 +53,8 @@ const spawnFruit = (w: number): FlyingFruit => {
     id: Date.now() + Math.random(),
     x,
     y: 0,
-    vx: (Math.random() - 0.5) * 260,
-    vy: -(520 + Math.random() * 260),
+    vx: (Math.random() - 0.5) * 200,
+    vy: -(360 + Math.random() * 180),
     r: 24,
     type,
     icon,
@@ -73,6 +84,7 @@ export const PixelSlicer: React.FC<GameContainerProps> = ({ onGameOver, isPaused
   const [timeLeft, setTimeLeft] = useState(60);
 
   const fruitsRef = useRef<FlyingFruit[]>([]);
+  const slicesRef = useRef<SliceHalf[]>([]);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const pointerTrailRef = useRef<Array<{ x: number; y: number; life: number }>>([]);
   const requestRef = useRef<number | null>(null);
@@ -98,6 +110,7 @@ export const PixelSlicer: React.FC<GameContainerProps> = ({ onGameOver, isPaused
   const startGame = () => {
     sound.playClick();
     fruitsRef.current = [];
+    slicesRef.current = [];
     livesRef.current = 3;
     scoreRef.current = 0;
     slicedCountRef.current = 0;
@@ -162,6 +175,30 @@ export const PixelSlicer: React.FC<GameContainerProps> = ({ onGameOver, isPaused
             slicedCountRef.current += 1;
             setSlicedCount(slicedCountRef.current);
             if (fruit.type === 'golden') sound.playCombo();
+
+            // Split animation: two halves fly apart
+            slicesRef.current.push(
+              {
+                x: fruit.x,
+                y: fruit.y,
+                vx: fruit.vx * 0.5 - 90,
+                vy: fruit.vy * 0.4 + 80,
+                rotation: fruit.rotation,
+                rotSpeed: fruit.rotSpeed + 6,
+                icon: fruit.icon,
+                life: 0.9,
+              },
+              {
+                x: fruit.x,
+                y: fruit.y,
+                vx: fruit.vx * 0.5 + 90,
+                vy: fruit.vy * 0.4 + 80,
+                rotation: fruit.rotation,
+                rotSpeed: fruit.rotSpeed - 6,
+                icon: fruit.icon,
+                life: 0.9,
+              }
+            );
           }
         }
       }
@@ -209,11 +246,22 @@ export const PixelSlicer: React.FC<GameContainerProps> = ({ onGameOver, isPaused
         // Physics
         for (let i = fruitsRef.current.length - 1; i >= 0; i--) {
           const f = fruitsRef.current[i];
-          f.vy += 900 * dt;
+          f.vy += 620 * dt;
           f.x += f.vx * dt;
           f.y += f.vy * dt;
           f.rotation += f.rotSpeed * dt;
           if (f.y > h + 50) fruitsRef.current.splice(i, 1);
+        }
+
+        // Sliced halves physics + fade
+        for (let i = slicesRef.current.length - 1; i >= 0; i--) {
+          const s = slicesRef.current[i];
+          s.vy += 700 * dt;
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
+          s.rotation += s.rotSpeed * dt;
+          s.life -= dt;
+          if (s.life <= 0) slicesRef.current.splice(i, 1);
         }
 
         // Trail decay
@@ -243,6 +291,20 @@ export const PixelSlicer: React.FC<GameContainerProps> = ({ onGameOver, isPaused
         ctx.fillText(f.icon, 0, 0);
         ctx.restore();
       }
+
+      // Sliced halves (split animation)
+      for (const s of slicesRef.current) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, s.life / 0.9);
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.rotation);
+        ctx.font = '28px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(s.icon, 0, 0);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
 
       // Slice trail
       for (const t of pointerTrailRef.current) {

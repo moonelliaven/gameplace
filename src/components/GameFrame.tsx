@@ -50,6 +50,20 @@ export const GameFrame: React.FC<GameFrameProps> = ({ game, onExit }) => {
   // Single-execution guard ref
   const hasFinishedRef = useRef(false);
 
+  // Prevent page scrolling while a game is open and gaming keys are pressed
+  useEffect(() => {
+    const blocked = new Set([
+      ' ', 'Spacebar', 'Enter',
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'w', 'a', 's', 'd', 'W', 'A', 'S', 'D',
+    ]);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (blocked.has(e.key)) e.preventDefault();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Restart / Reset game instance
   const handleRestart = useCallback(() => {
     sound.playClick();

@@ -267,7 +267,7 @@ export const PixelPong: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
           ref={canvasRef}
           width={640}
           height={420}
-          className="block w-full h-full touch-none"
+          className="block w-full h-full touch-none cursor-grab active:cursor-grabbing"
           onPointerMove={handlePointer}
           onPointerDown={handlePointer}
         />
@@ -305,6 +305,30 @@ export const PixelPong: React.FC<GameContainerProps> = ({ onGameOver, isPaused }
             </button>
           </div>
         )}
+      </div>
+
+      {/* Turn up / down buttons (hold) */}
+      <div className="flex gap-3 p-3 bg-[#151525] justify-center">
+        <button
+          onPointerDown={() => (keysRef.current.up = true)}
+          onPointerUp={() => (keysRef.current.up = false)}
+          onPointerLeave={() => (keysRef.current.up = false)}
+          disabled={gameState !== 'PLAYING'}
+          className="flex-1 max-w-[160px] bg-teal-500 hover:bg-teal-400 text-black font-pixel text-xs py-3 border-2 border-black shadow-[3px_3px_0_0_#000] active:translate-y-1 cursor-pointer disabled:opacity-50 flex flex-col items-center"
+        >
+          <span className="text-base">▲</span>
+          <span>TURN UP (W)</span>
+        </button>
+        <button
+          onPointerDown={() => (keysRef.current.down = true)}
+          onPointerUp={() => (keysRef.current.down = false)}
+          onPointerLeave={() => (keysRef.current.down = false)}
+          disabled={gameState !== 'PLAYING'}
+          className="flex-1 max-w-[160px] bg-teal-500 hover:bg-teal-400 text-black font-pixel text-xs py-3 border-2 border-black shadow-[3px_3px_0_0_#000] active:translate-y-1 cursor-pointer disabled:opacity-50 flex flex-col items-center"
+        >
+          <span className="text-base">▼</span>
+          <span>TURN DOWN (S)</span>
+        </button>
       </div>
     </div>
   );

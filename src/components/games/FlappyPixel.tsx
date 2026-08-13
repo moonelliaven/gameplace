@@ -169,7 +169,6 @@ export const FlappyPixel: React.FC<GameContainerProps> = ({ onGameOver, isPaused
 
       {/* Main Sky Area */}
       <div
-        onClick={handleFlap}
         onPointerDown={handleFlap}
         className="relative flex-1 bg-gradient-to-b from-sky-400 via-sky-300 to-amber-200 overflow-hidden border-b-8 border-emerald-600 cursor-pointer touch-none"
       >

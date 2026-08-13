@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GameContainerProps } from '../../types';
 import { sound } from '../../utils/sound';
-import { Type, Trophy, Play, RotateCcw, Timer, Eraser } from 'lucide-react';
+import { Type, Trophy, Play, RotateCcw, Timer, Eraser, RefreshCw, Lightbulb } from 'lucide-react';
 import { getHighScoreForGame } from '../../utils/scores';
 
 const WORDS = [
@@ -42,6 +42,8 @@ export const WordScramble: React.FC<GameContainerProps> = ({ onGameOver, isPause
   const [scrambled, setScrambled] = useState<string[]>([]);
   const [slots, setSlots] = useState<(string | null)[]>([]);
   const [feedback, setFeedback] = useState<{ text: string; type: 'correct' | 'wrong'; id: number } | null>(null);
+  const [changeLeft, setChangeLeft] = useState(2);
+  const [hintLeft, setHintLeft] = useState(3);
 
   const scoreRef = useRef(0);
   const roundRef = useRef(1);
@@ -62,6 +64,60 @@ export const WordScramble: React.FC<GameContainerProps> = ({ onGameOver, isPause
     slotsRef.current = empty;
   }, []);
 
+  // Change word (limit 2 per game)
+  const changeWord = () => {
+    if (gameStateRef.current !== 'PLAYING' || isPausedRef.current || changeLeft <= 0) return;
+    sound.playClick();
+    setChangeLeft((c) => c - 1);
+    loadWord();
+    const fId = Date.now();
+    setFeedback({ text: '🔄 WORD CHANGED', type: 'correct', id: fId });
+    setTimeout(() => setFeedback((f) => (f?.id === fId ? null : f)), 900);
+  };
+
+  // Hint: reveal one correct letter in place (limit 3 per game)
+  const useHint = () => {
+    if (gameStateRef.current !== 'PLAYING' || isPausedRef.current || hintLeft <= 0) return;
+    const emptyIdx = slotsRef.current.findIndex((l) => l === null);
+    if (emptyIdx < 0) return;
+
+    sound.playScore();
+    setHintLeft((h) => h - 1);
+
+    const nextSlots = [...slotsRef.current];
+    const correctLetter = currentWord[emptyIdx];
+    nextSlots[emptyIdx] = correctLetter;
+    slotsRef.current = nextSlots;
+    setSlots(nextSlots);
+
+    // Remove the revealed letter from the scrambled letters
+    const newScrambled = [...scrambled];
+    for (let i = 0; i < newScrambled.length; i++) {
+      if (newScrambled[i] === correctLetter) {
+        newScrambled[i] = '';
+        break;
+      }
+    }
+    setScrambled(newScrambled);
+
+    // Auto-complete if hint fills the word
+    if (nextSlots.every((l) => l !== null)) {
+      if (nextSlots.join('') === currentWord) {
+        sound.playLevelUp();
+        const gained = currentWord.length * 10;
+        scoreRef.current += gained;
+        setScore(scoreRef.current);
+        setSolvedCount((s) => s + 1);
+        setRound((r) => r + 1);
+        roundRef.current += 1;
+        const fId = Date.now();
+        setFeedback({ text: `✓ CORRECT! +${gained}`, type: 'correct', id: fId });
+        setTimeout(() => setFeedback((f) => (f?.id === fId ? null : f)), 900);
+        setTimeout(() => loadWord(), 1000);
+      }
+    }
+  };
+
   const startGame = () => {
     sound.playClick();
     setScore(0);
@@ -70,6 +126,8 @@ export const WordScramble: React.FC<GameContainerProps> = ({ onGameOver, isPause
     roundRef.current = 1;
     setSolvedCount(0);
     setTimeLeft(60);
+    setChangeLeft(2);
+    setHintLeft(3);
     loadWord();
     setGameState('PLAYING');
   };
@@ -225,6 +283,23 @@ export const WordScramble: React.FC<GameContainerProps> = ({ onGameOver, isPause
         >
           <Eraser className="w-4 h-4" />RESET LETTERS
         </button>
+
+        <div className="flex gap-3">
+          <button
+            onClick={changeWord}
+            disabled={gameState !== 'PLAYING' || changeLeft <= 0}
+            className="bg-blue-700 hover:bg-blue-600 text-white font-pixel py-2 px-5 text-xs border-2 border-black shadow-[3px_3px_0_0_#000] cursor-pointer active:scale-95 disabled:opacity-40 flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />CHANGE WORD ({changeLeft})
+          </button>
+          <button
+            onClick={useHint}
+            disabled={gameState !== 'PLAYING' || hintLeft <= 0}
+            className="bg-amber-600 hover:bg-amber-500 text-white font-pixel py-2 px-5 text-xs border-2 border-black shadow-[3px_3px_0_0_#000] cursor-pointer active:scale-95 disabled:opacity-40 flex items-center gap-2"
+          >
+            <Lightbulb className="w-4 h-4" />HINT ({hintLeft})
+          </button>
+        </div>
 
         {gameState === 'READY' && (
           <div className="absolute inset-0 bg-slate-950/85 flex flex-col items-center justify-center p-6 text-center z-30">
